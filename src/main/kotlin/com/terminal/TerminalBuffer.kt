@@ -22,7 +22,7 @@ class TerminalBuffer(
     private var screen = MutableList(height) { Array(width) { Cell() } }
 
     // The scrollback is the lines that have been scrolled away
-    private var scrollback = MutableList(width) { Array(height) { Cell() } }
+    private var scrollback = ArrayDeque<Array<Cell>>()
 
     // Current buffer attributes - foreground, background and styles
     private var fgCol = TerminalColour.DEFAULT
@@ -76,13 +76,18 @@ class TerminalBuffer(
         setCursorPosition(cursorX + x, cursorY + y)
     }
 
+    // Move cursor one place
     private fun advanceCursor() {
         // If we have reached end of line then go to next one
         if (cursorX >= width - 1) {
             cursorX = 0
-            cursorY++
+            if (cursorY >= height - 1) {
+                scroll()
+            } else {
+                cursorY++
+            }
         } else {
-            moveCursorBy(1, 0)
+            cursorX++
         }
     }
 
@@ -107,12 +112,20 @@ class TerminalBuffer(
         // TODO
     }
 
+    // reset all cells to the current state of the buffer
     fun clearScreen() {
-        // TODO
+        for (y in 0..<height) {
+            for (x in 0..<width) {
+                screen[y][x] = Cell(null, fgCol, bgCol, isBold, isItalic, isUnderline)
+            }
+        }
+        cursorX = 0
+        cursorY = 0
     }
 
     fun clearScreenAndScrollback() {
-        // TODO
+        clearScreen()
+        scrollback.clear()
     }
 
     // Content Access operations
@@ -145,7 +158,17 @@ class TerminalBuffer(
         return ""
     }
 
+    // Move top line from screen into scrollback
     private fun scroll() {
-        // TODO
+        val removedLine = screen.removeFirst()
+        scrollback.addLast(removedLine)
+
+        // remove the first thing in scroll history if size is too big
+        if (scrollback.size > maxScrollback) {
+            scrollback.removeFirst()
+        }
+
+        // add new line of empty cells to screen
+        screen.add(Array(width) { Cell() })
     }
 }
