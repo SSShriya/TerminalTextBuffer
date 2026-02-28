@@ -21,14 +21,15 @@ class TerminalBuffer(
     // Current buffer attributes - foreground, background and styles
     private var fgCol = TerminalColour.DEFAULT
     private var bgCol = TerminalColour.DEFAULT
-    private var bold = false
-    private var italic = false
-    private var underline = false
+    private var isBold = false
+    private var isItalic = false
+    private var isUnderline = false
 
     // Cursor information
     private var cursorX = 0
     private var cursorY = 0
 
+    // Cursor operations
     val cursorPosition: Pair<Int, Int>
         get() = cursorX to cursorY
 
@@ -36,8 +37,9 @@ class TerminalBuffer(
         x: Int,
         y: Int,
     ) {
-        cursorX = x
-        cursorY = y
+        // Cursor should not move outside screen bounds
+        cursorX = x.coerceIn(0, width - 1)
+        cursorY = y.coerceIn(0, height - 1)
     }
 
     fun moveCursorBy(
@@ -45,5 +47,69 @@ class TerminalBuffer(
         y: Int,
     ) {
         setCursorPosition(cursorX + x, cursorY + y)
+    }
+
+    private fun advanceCursor() {
+        // if we have reached end of line
+        if (cursorX >= width - 1) {
+            cursorX = 0
+            cursorY++
+        } else {
+            moveCursorBy(1, 0)
+        }
+    }
+
+    // Editing Operations
+    fun writeText(text: String) {
+        text.forEach { char ->
+            val cell = Cell(char, fgCol, bgCol, isBold, isItalic, isUnderline)
+            screen[cursorY][cursorX] = cell
+            advanceCursor()
+        }
+    }
+
+    fun insertText(text: String) {
+        // TODO
+    }
+
+    fun fillLine(char: Char) {
+        // TODO
+    }
+
+    fun insertEmptyLine() {
+        // TODO
+    }
+
+    fun clearScreen() {
+        // TODO
+    }
+
+    fun clearScreenAndScrollback() {
+        // TODO
+    }
+
+    // Content Access operations
+    fun charAtPos(
+        x: Int,
+        y: Int,
+    ) = screen[x][y]
+
+    fun attrsAtPos(
+        x: Int,
+        y: Int,
+    ) {
+        // TODO
+    }
+
+    fun getLine() {
+        // TODO
+    }
+
+    fun getScreenContent() {
+        // TODO
+    }
+
+    fun getScreenScrollbackContent() {
+        // TODO
     }
 }
