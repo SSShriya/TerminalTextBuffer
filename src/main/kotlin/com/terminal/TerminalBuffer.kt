@@ -1,4 +1,4 @@
-package main.kotlin.com.terminal.model
+package main.kotlin.com.terminal
 
 /*
 The buffer maintains a cursor position — where the next character will be written.

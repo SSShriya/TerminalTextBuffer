@@ -1,4 +1,4 @@
-package main.kotlin.com.terminal.model
+package main.kotlin.com.terminal
 
 // Terminal Colour enum that contains default colour, and the 16 standard terminal colours
 enum class TerminalColour {
