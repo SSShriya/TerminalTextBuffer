@@ -109,4 +109,41 @@ class TerminalBufferContentTest {
         assertEquals("Line 0", lines[1])
         assertEquals("Line 1", lines[2])
     }
+
+    @Test
+    fun `fill a line with a character`() {
+        buffer.fillLine('A')
+        assertEquals("A".repeat(width), buffer.getLine(0))
+
+        buffer.fillLine('B')
+        assertEquals("B".repeat(width), buffer.getLine(0))
+    }
+
+    @Test
+    fun `writeText wraps to next line when width is exceeded`() {
+        // Fill the first line exactly
+        buffer.writeText("1234567890")
+
+        // Write one more character
+        buffer.writeText("A")
+
+        assertEquals("1234567890", buffer.getLine(0))
+        assertEquals("A", buffer.getLine(1).trimEnd())
+    }
+
+    @Test
+    fun `insertText triggers recursive wrapping across multiple lines`() {
+        // Fill two lines: row 0: "AAAAAAAAAA",row 1: "BBBBBBBBB"
+        buffer.writeText("AAAAAAAAAABBBBBBBBB")
+
+        // Move to the beginning and insert a '!'
+        buffer.setCursorPosition(0, 0)
+        buffer.insertText("!")
+
+        // Expected Row 0: "!AAAAAAAAA"
+        assertEquals("!AAAAAAAAA", buffer.getLine(0))
+
+        // Expected Row 1: "ABBBBBBBBB" because of wrapping
+        assertEquals("ABBBBBBBBB", buffer.getLine(1))
+    }
 }

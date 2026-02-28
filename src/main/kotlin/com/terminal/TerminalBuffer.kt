@@ -93,20 +93,22 @@ class TerminalBuffer(
 
     fun insertText(text: String) {
         text.forEach { char ->
+            val curX = cursorX
+            val curY = cursorY
             // save the last char in row
-            val lastCell = screen[cursorY][width - 1]
+            val lastCell = screen[curY][width - 1]
 
             // move all chars to right
-            for (x in (width - 1) downTo (cursorX + 1)) {
-                screen[cursorY][x] = screen[cursorY][x -1]
+            for (x in (width - 1) downTo (curX + 1)) {
+                screen[curY][x] = screen[curY][x -1]
             }
 
             // add new char into current pos
-            screen[cursorY][cursorX] = createCell(char)
+            screen[curY][cursorX] = createCell(char)
 
             // if last cell wasn't empty then wrap last char
             if (lastCell.char != ' ') {
-                wrapCell(lastCell)
+                wrapCell(lastCell, curY + 1)
             }
 
             advanceCursor()
@@ -197,7 +199,7 @@ class TerminalBuffer(
         }
 
         // add new line of empty cells to screen
-        screen.add(Array(width) { Cell() })
+        screen.add(Array(width) { createCell(' ') })
     }
 
     private fun writeNewLine() {
@@ -210,17 +212,22 @@ class TerminalBuffer(
     }
 
     // wraps overflowed chars to next row
-    private fun wrapCell(cell: Cell) {
+    private fun wrapCell(cell: Cell, row: Int) {
+        var targetRow = row
         // scroll if at bottom of screen
-        if (cursorY >= height - 1) {
+        if (targetRow >= height) {
             scroll()
+            targetRow = height - 1
         }
 
-        // shift the next line
-        val nextY = (cursorY + 1).coerceAtMost(height - 1)
+        val lastCell = screen[targetRow][width - 1]
         for (x in (width - 1) downTo 1) {
-            screen[nextY][x] = screen[nextY][x - 1]
+            screen[targetRow][x] = screen[targetRow][x - 1]
         }
-        screen[nextY][0] = cell
+        screen[targetRow][0] = cell
+
+        if (lastCell.char != ' ') {
+            wrapCell(lastCell, targetRow + 1)
+        }
     }
 }

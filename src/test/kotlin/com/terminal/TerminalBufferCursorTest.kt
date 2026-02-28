@@ -3,7 +3,6 @@ package test.kotlin.com.terminal
 import com.terminal.TerminalBuffer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 /* Unit tests for Terminal Buffer Cursor operations */
@@ -86,14 +85,5 @@ class TerminalBufferCursorTest {
     fun `cursor should move when text is inserted on a line`() {
         buffer.insertText("Hi")
         assertEquals(2 to 0, buffer.cursorPosition)
-    }
-
-    @Test
-    fun `fill a line with a character`() {
-        buffer.fillLine('A')
-        assertEquals("A".repeat(width), buffer.getLine(0))
-
-        buffer.fillLine('B')
-        assertEquals("B".repeat(width), buffer.getLine(0))
     }
 }

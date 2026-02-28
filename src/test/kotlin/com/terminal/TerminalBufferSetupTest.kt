@@ -4,7 +4,6 @@ import com.terminal.TerminalBuffer
 import com.terminal.TerminalColour
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 
 /* Unit tests for Terminal Buffer Setup */
 class TerminalBufferSetupTest {
