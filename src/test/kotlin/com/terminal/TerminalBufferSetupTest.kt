@@ -2,6 +2,7 @@ package test.kotlin.com.terminal
 
 import com.terminal.TerminalBuffer
 import com.terminal.TerminalColour
+import com.terminal.nullChar
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -22,14 +23,14 @@ class TerminalBufferSetupTest {
         val topLeft = buffer.cellAtPos(0, 0)
         val bottomRight = buffer.cellAtPos(19, 9)
 
-        assertEquals(' ', topLeft.char)
+        assertEquals(nullChar, topLeft.char)
         assertFalse(topLeft.isBold)
         assertFalse(topLeft.isItalic)
         assertFalse(topLeft.isUnderline)
         assertEquals(TerminalColour.DEFAULT, topLeft.fgCol)
         assertEquals(TerminalColour.DEFAULT, topLeft.bgCol)
 
-        assertEquals(' ', bottomRight.char)
+        assertEquals(nullChar, bottomRight.char)
         assertFalse(bottomRight.isBold)
         assertFalse(bottomRight.isItalic)
         assertFalse(bottomRight.isUnderline)

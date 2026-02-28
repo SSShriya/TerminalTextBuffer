@@ -104,12 +104,10 @@ class TerminalBuffer(
             }
 
             // add new char into current pos
-            screen[curY][cursorX] = createCell(char)
+            screen[curY][curX] = createCell(char)
 
-            // if last cell wasn't empty then wrap last char
-            if (lastCell.char != ' ') {
-                wrapCell(lastCell, curY + 1)
-            }
+            // wrap last char
+            wrapCell(lastCell, curY + 1)
 
             advanceCursor()
         }
@@ -123,7 +121,7 @@ class TerminalBuffer(
 
     fun insertEmptyLine() {
         screen.removeLast()
-        val newline = Array(width) { createCell(' ') }
+        val newline = Array(width) { createCell(nullChar) }
 
         screen.add(cursorY, newline)
     }
@@ -132,7 +130,7 @@ class TerminalBuffer(
     fun clearScreen() {
         for (y in 0..<height) {
             for (x in 0..<width) {
-                screen[y][x] = createCell(' ')
+                screen[y][x] = createCell(nullChar)
             }
         }
         cursorX = 0
@@ -156,10 +154,12 @@ class TerminalBuffer(
     ) = scrollback[y][x]
 
     fun getLine(line: Int): String =
-        screen[line].map { it.char }.joinToString("")
+        if (line !in 0..<height) ""
+        else screen[line].map { if (it.char == nullChar) ' ' else it.char }.joinToString("")
 
     fun getScrollbackLine(line: Int): String =
-        scrollback[line].map { it.char }.joinToString("")
+        if (line !in 0..<scrollback.size) ""
+        else scrollback[line].map { if (it.char == nullChar) ' ' else it.char }.joinToString("")
 
     fun getScreenContent(): String =
         (0..<height).joinToString("\n") { getLine(it) }
@@ -199,7 +199,7 @@ class TerminalBuffer(
         }
 
         // add new line of empty cells to screen
-        screen.add(Array(width) { createCell(' ') })
+        screen.add(Array(width) { createCell(nullChar) })
     }
 
     private fun writeNewLine() {
@@ -213,6 +213,8 @@ class TerminalBuffer(
 
     // wraps overflowed chars to next row
     private fun wrapCell(cell: Cell, row: Int) {
+        if (cell.char == nullChar || cell.char == ' ') return
+
         var targetRow = row
         // scroll if at bottom of screen
         if (targetRow >= height) {
@@ -226,8 +228,6 @@ class TerminalBuffer(
         }
         screen[targetRow][0] = cell
 
-        if (lastCell.char != ' ') {
-            wrapCell(lastCell, targetRow + 1)
-        }
+        wrapCell(lastCell, targetRow + 1)
     }
 }

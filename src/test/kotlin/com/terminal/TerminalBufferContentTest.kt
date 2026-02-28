@@ -4,8 +4,10 @@ import com.terminal.TerminalBuffer
 import com.terminal.TerminalColour
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 /* Unit tests for terminal buffer content retrieval */
@@ -145,5 +147,40 @@ class TerminalBufferContentTest {
 
         // Expected Row 1: "ABBBBBBBBB" because of wrapping
         assertEquals("ABBBBBBBBB", buffer.getLine(1))
+    }
+
+    @Disabled("Not implemented")
+    @Test
+    fun `filling the last cell of the last row does not trigger a scroll`() {
+        // Fill the first row
+        buffer.writeText("ABCDEFJHIJ")
+        // Fill the first 9 cells of the second row
+        buffer.writeText("KLMNOPQRS")
+
+        // Write the last char on the grid
+        buffer.writeText("T")
+
+        // The screen should still contain "AB" and "CD"
+        assertEquals("ABCDEFJHIJ", buffer.getLine(0))
+        assertEquals("KLMNOPQRST", buffer.getLine(1))
+
+        // Scrollback should still be empty
+        assertEquals("", buffer.getScrollbackLine(0))
+    }
+
+    @Test
+    fun `wrapping at the bottom of the screen triggers a scroll`() {
+        // Fill both rows
+        buffer.writeText("1234567890") // Row 0
+        buffer.writeText("ABCDEFGHIJ") // Row 1
+
+        // Insert at the very top
+        buffer.setCursorPosition(0, 0)
+        buffer.insertText("!")
+
+        // 1. The "J" should have been pushed off the bottom, triggering a scroll.
+        // 2. Therefore, the old Row 0 ("1234567890") is now in scrollback.
+        assertEquals("1234567890", buffer.getScrollbackLine(0).trimEnd())
+        assertEquals("!ABCDEFGHI", buffer.getLine(0).trimEnd())
     }
 }

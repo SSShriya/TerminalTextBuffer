@@ -7,9 +7,11 @@ package com.terminal
 - Style flags: bold, italic, underline (at minimum)
 */
 
+const val nullChar = '\u0000'
+
 // Cell class contains necessary information for each character cell
 data class Cell(
-    val char: Char = ' ',
+    val char: Char = nullChar,
     val fgCol: TerminalColour = TerminalColour.DEFAULT,
     val bgCol: TerminalColour = TerminalColour.DEFAULT,
     val isBold: Boolean = false,
