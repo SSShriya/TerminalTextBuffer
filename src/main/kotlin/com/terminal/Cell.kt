@@ -9,7 +9,7 @@ package com.terminal
 
 // Cell class contains necessary information for each character cell
 data class Cell(
-    val char: Char? = null,
+    val char: Char = ' ',
     val fgCol: TerminalColour = TerminalColour.DEFAULT,
     val bgCol: TerminalColour = TerminalColour.DEFAULT,
     val isBold: Boolean = false,

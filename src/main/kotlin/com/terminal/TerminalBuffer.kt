@@ -18,10 +18,12 @@ class TerminalBuffer(
         require(maxScrollback >= 0) { "Maximum scrollback must be non-negative: Found scrollback: $maxScrollback" }
     }
 
+    /* ATTRIBUTES */
     // The screen is a list of cell arrays. Each array is a row of cells
     private var screen = MutableList(height) { Array(width) { Cell() } }
 
-    // The scrollback is the lines that have been scrolled away
+    // The scrollback is the lines that have been scrolled away - a double ended queue
+    // is used to allow efficient accesses to both the top and bottom of the scrollback
     private var scrollback = ArrayDeque<Array<Cell>>()
 
     // Current buffer attributes - foreground, background and styles
@@ -35,7 +37,7 @@ class TerminalBuffer(
     private var cursorX = 0
     private var cursorY = 0
 
-    /* Attribute Operations */
+    /* ATTRIBUTE OPERATIONS */
     fun setForeground(fg: TerminalColour) {
         fgCol = fg
     }
@@ -56,7 +58,7 @@ class TerminalBuffer(
         isUnderline = true
     }
 
-    /* Cursor operations */
+    /* CURSOR OPERATIONS  */
     val cursorPosition: Pair<Int, Int>
         get() = cursorX to cursorY
 
@@ -76,27 +78,16 @@ class TerminalBuffer(
         setCursorPosition(cursorX + x, cursorY + y)
     }
 
-    // Move cursor one place
-    private fun advanceCursor() {
-        // If we have reached end of line then go to next one
-        if (cursorX >= width - 1) {
-            cursorX = 0
-            if (cursorY >= height - 1) {
-                scroll()
-            } else {
-                cursorY++
-            }
-        } else {
-            cursorX++
-        }
-    }
-
-    /* Editing Operations */
+    /* EDITING OPERATIONS */
     fun writeText(text: String) {
         text.forEach { char ->
-            val cell = Cell(char, fgCol, bgCol, isBold, isItalic, isUnderline)
-            screen[cursorY][cursorX] = cell
-            advanceCursor()
+            if (char == '\n') {
+                writeNewLine()
+            } else {
+                val cell = createCell(char)
+                screen[cursorY][cursorX] = cell
+                advanceCursor()
+            }
         }
     }
 
@@ -105,7 +96,10 @@ class TerminalBuffer(
     }
 
     fun fillLine(char: Char) {
-        // TODO
+        val cell = createCell(char)
+        for (x in 0..<width) {
+            screen[cursorY][x] = cell
+        }
     }
 
     fun insertEmptyLine() {
@@ -116,7 +110,7 @@ class TerminalBuffer(
     fun clearScreen() {
         for (y in 0..<height) {
             for (x in 0..<width) {
-                screen[y][x] = Cell(null, fgCol, bgCol, isBold, isItalic, isUnderline)
+                screen[y][x] = createCell(' ')
             }
         }
         cursorX = 0
@@ -139,23 +133,37 @@ class TerminalBuffer(
         y: Int,
     ) = scrollback[y][x]
 
-    fun getLine(line: Int): String {
-        // TODO
-        return ""
-    }
+    fun getLine(line: Int): String =
+        screen[line].map { it.char }.joinToString("")
 
-    fun getScrollbackLine(line: Int): String {
-        return ""
-    }
+    fun getScrollbackLine(line: Int): String =
+        scrollback[line].map { it.char }.joinToString("")
 
-    fun getScreenContent(): String {
-        // TODO
-        return ""
-    }
+    fun getScreenContent(): String =
+        (0..<height).joinToString("\n") { getLine(it) }
 
     fun getScreenScrollbackContent(): String {
-        // TODO
-        return ""
+        val sb = StringBuilder()
+
+        // all scrollback lines
+        for (i in 0..<scrollback.size) {
+            sb.append(getScrollbackLine(i)).append("\n")
+        }
+
+        sb.append(getScreenContent())
+        return sb.toString()
+    }
+
+    /* HELPER FUNCTIONS */
+    private fun createCell(char: Char): Cell = Cell(char, fgCol, bgCol, isBold, isItalic, isUnderline)
+
+    // Move cursor one place
+    private fun advanceCursor() {
+        cursorX++
+        // If we have reached end of line then go to next one
+        if (cursorX >= width) {
+            writeNewLine()
+        }
     }
 
     // Move top line from screen into scrollback
@@ -170,5 +178,14 @@ class TerminalBuffer(
 
         // add new line of empty cells to screen
         screen.add(Array(width) { Cell() })
+    }
+
+    private fun writeNewLine() {
+        cursorX = 0
+        if (cursorY >= height - 1) {
+            scroll()
+        } else {
+            cursorY++
+        }
     }
 }
