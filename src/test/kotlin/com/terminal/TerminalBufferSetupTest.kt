@@ -20,8 +20,8 @@ class TerminalBufferSetupTest {
     @Test
     fun `initialises a screen with empty cells`() {
         val buffer = TerminalBuffer(20, 10, 5)
-        val topLeft = buffer.charAtPos(0, 0)
-        val bottomRight = buffer.charAtPos(19, 9)
+        val topLeft = buffer.cellAtPos(0, 0)
+        val bottomRight = buffer.cellAtPos(19, 9)
 
         assertEquals(null, topLeft.char)
         assertFalse(topLeft.isBold)
@@ -29,6 +29,13 @@ class TerminalBufferSetupTest {
         assertFalse(topLeft.isUnderline)
         assertEquals(TerminalColour.DEFAULT, topLeft.fgCol)
         assertEquals(TerminalColour.DEFAULT, topLeft.bgCol)
+
+        assertEquals(null, bottomRight.char)
+        assertFalse(bottomRight.isBold)
+        assertFalse(bottomRight.isItalic)
+        assertFalse(bottomRight.isUnderline)
+        assertEquals(TerminalColour.DEFAULT, bottomRight.fgCol)
+        assertEquals(TerminalColour.DEFAULT, bottomRight.bgCol)
     }
 
     @Test

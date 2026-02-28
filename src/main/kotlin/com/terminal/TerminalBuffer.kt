@@ -35,10 +35,30 @@ class TerminalBuffer(
     private var cursorX = 0
     private var cursorY = 0
 
-    // Cursor operations
+    /* Attribute Operations */
+    fun setForeground(fg: TerminalColour) {
+        fgCol = fg
+    }
+
+    fun setBackground(bg: TerminalColour) {
+        bgCol = bg
+    }
+
+    fun setBold() {
+        isBold = true
+    }
+
+    fun setItalic() {
+        isItalic = true
+    }
+
+    fun setUnderline() {
+        isUnderline = true
+    }
+
+    /* Cursor operations */
     val cursorPosition: Pair<Int, Int>
         get() = cursorX to cursorY
-
 
     fun setCursorPosition(
         x: Int,
@@ -57,7 +77,7 @@ class TerminalBuffer(
     }
 
     private fun advanceCursor() {
-        // if we have reached end of line
+        // If we have reached end of line then go to next one
         if (cursorX >= width - 1) {
             cursorX = 0
             cursorY++
@@ -66,7 +86,7 @@ class TerminalBuffer(
         }
     }
 
-    // Editing Operations
+    /* Editing Operations */
     fun writeText(text: String) {
         text.forEach { char ->
             val cell = Cell(char, fgCol, bgCol, isBold, isItalic, isUnderline)
@@ -96,27 +116,36 @@ class TerminalBuffer(
     }
 
     // Content Access operations
-    fun charAtPos(
+    fun cellAtPos(
         x: Int,
         y: Int,
     ) = screen[y][x]
 
-    fun attrsAtPos(
+    fun scrollbackCellAtPos(
         x: Int,
         y: Int,
-    ) {
+    ) = scrollback[y][x]
+
+    fun getLine(line: Int): String {
         // TODO
+        return ""
     }
 
-    fun getLine() {
-        // TODO
+    fun getScrollbackLine(line: Int): String {
+        return ""
     }
 
-    fun getScreenContent() {
+    fun getScreenContent(): String {
         // TODO
+        return ""
     }
 
-    fun getScreenScrollbackContent() {
+    fun getScreenScrollbackContent(): String {
+        // TODO
+        return ""
+    }
+
+    private fun scroll() {
         // TODO
     }
 }
