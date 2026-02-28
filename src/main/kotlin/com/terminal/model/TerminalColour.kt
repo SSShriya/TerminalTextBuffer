@@ -1,0 +1,22 @@
+package main.kotlin.com.terminal.model
+
+// Terminal Colour enum that contains default colour, and the 16 standard terminal colours
+enum class TerminalColour {
+    DEFAULT,
+    BLACK,
+    RED,
+    GREEN,
+    YELLOW,
+    BLUE,
+    MAGENTA,
+    CYAN,
+    WHITE,
+    BRIGHT_BLACK,
+    BRIGHT_RED,
+    BRIGHT_GREEN,
+    BRIGHT_YELLOW,
+    BRIGHT_BLUE,
+    BRIGHT_MAGENTA,
+    BRIGHT_CYAN,
+    BRIGHT_WHITE,
+}
