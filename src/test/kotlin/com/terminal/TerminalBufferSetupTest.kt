@@ -45,6 +45,7 @@ class TerminalBufferSetupTest {
         val exception = assertThrows(IllegalArgumentException::class.java) {
             TerminalBuffer(80, -24, 100)
         }
+        println(exception.message)
 
         assertTrue(exception.message!!.contains("height"))
     }

@@ -12,6 +12,12 @@ class TerminalBuffer(
     val height: Int,
     val maxScrollback: Int,
 ) {
+    init {
+        require(width > 0) { "Width must be positive: Found width: $width" }
+        require(height > 0) { "Height must be positive: Found height: $height" }
+        require(maxScrollback >= 0) { "Maximum scrollback must be non-negative: Found scrollback: $maxScrollback" }
+    }
+
     // The screen is a list of cell arrays. Each array is a row of cells
     private var screen = MutableList(height) { Array(width) { Cell() } }
 
@@ -32,6 +38,7 @@ class TerminalBuffer(
     // Cursor operations
     val cursorPosition: Pair<Int, Int>
         get() = cursorX to cursorY
+
 
     fun setCursorPosition(
         x: Int,
@@ -92,7 +99,7 @@ class TerminalBuffer(
     fun charAtPos(
         x: Int,
         y: Int,
-    ) = screen[x][y]
+    ) = screen[y][x]
 
     fun attrsAtPos(
         x: Int,
