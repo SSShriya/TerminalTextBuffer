@@ -3,8 +3,9 @@ package test.kotlin.com.terminal
 import com.terminal.TerminalBuffer
 import com.terminal.TerminalColour
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 /* Unit tests for terminal buffer content retrieval */
@@ -68,7 +69,8 @@ class TerminalBufferContentTest {
     @Test
     fun `get character and attributes from scrollback`() {
         buffer.setForeground(TerminalColour.RED)
-        buffer.setBold()
+        buffer.setItalic()
+        buffer.setUnderline()
         buffer.writeText("Old")
 
         // Height is 2, so 2 newlines will push "Old" into scrollback
@@ -77,7 +79,9 @@ class TerminalBufferContentTest {
         val cell = buffer.scrollbackCellAtPos(0, 0)
         assertEquals('O', cell.char)
         assertEquals(TerminalColour.RED, cell.fgCol)
-        assertEquals(true, cell.isBold)
+        assertTrue(cell.isUnderline)
+        assertTrue(cell.isItalic)
+        assertFalse(cell.isBold)
     }
 
     @Test

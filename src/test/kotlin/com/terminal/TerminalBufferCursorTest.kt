@@ -41,6 +41,9 @@ class TerminalBufferCursorTest {
 
         buffer.moveCursorBy(xMov, yMov)
         assertEquals(2 * xMov to 2 * yMov, buffer.cursorPosition)
+
+        buffer.moveCursorBy(-xMov, -yMov)
+        assertEquals(xMov to yMov, buffer.cursorPosition)
     }
 
     @Test
@@ -79,20 +82,18 @@ class TerminalBufferCursorTest {
         assertEquals(2 to 0, buffer.cursorPosition)
     }
 
-    @Disabled("Not implemented yet")
     @Test
     fun `cursor should move when text is inserted on a line`() {
         buffer.insertText("Hi")
         assertEquals(2 to 0, buffer.cursorPosition)
     }
 
-    @Disabled("Not implemented yet")
     @Test
-    fun `cursor should move when a line is filled with a character`() {
+    fun `fill a line with a character`() {
         buffer.fillLine('A')
-        assertEquals(0 to 1, buffer.cursorPosition)
+        assertEquals("A".repeat(width), buffer.getLine(0))
 
         buffer.fillLine('B')
-        assertEquals(0 to 2, buffer.cursorPosition)
+        assertEquals("B".repeat(width), buffer.getLine(0))
     }
 }
