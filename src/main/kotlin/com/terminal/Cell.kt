@@ -1,4 +1,4 @@
-package main.kotlin.com.terminal
+package com.terminal
 
 /* A terminal buffer consists of a grid of character cells. Each cell can have:
 - Character (or empty)

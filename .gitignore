@@ -32,3 +32,8 @@ bin/
 .DS_Store
 
 TerminalTextBuffer.iml
+.gradle/
+build/
+*.class
+*.log
+.idea/

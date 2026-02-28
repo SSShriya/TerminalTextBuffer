@@ -1,4 +1,4 @@
-package main.kotlin.com.terminal
+package com.terminal
 
 fun main() {
     // TODO
