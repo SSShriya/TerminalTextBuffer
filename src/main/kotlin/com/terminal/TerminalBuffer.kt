@@ -92,18 +92,38 @@ class TerminalBuffer(
     }
 
     fun insertText(text: String) {
-        // TODO
+        text.forEach { char ->
+            // save the last char in row
+            val lastCell = screen[cursorY][width - 1]
+
+            // move all chars to right
+            for (x in (width - 1) downTo (cursorX + 1)) {
+                screen[cursorY][x] = screen[cursorY][x -1]
+            }
+
+            // add new char into current pos
+            screen[cursorY][cursorX] = createCell(char)
+
+            // if last cell wasn't empty then wrap last char
+            if (lastCell.char != ' ') {
+                wrapCell(lastCell)
+            }
+
+            advanceCursor()
+        }
     }
 
     fun fillLine(char: Char) {
-        val cell = createCell(char)
         for (x in 0..<width) {
-            screen[cursorY][x] = cell
+            screen[cursorY][x] = createCell(char)
         }
     }
 
     fun insertEmptyLine() {
-        // TODO
+        screen.removeLast()
+        val newline = Array(width) { createCell(' ') }
+
+        screen.add(cursorY, newline)
     }
 
     // reset all cells to the current state of the buffer
@@ -187,5 +207,20 @@ class TerminalBuffer(
         } else {
             cursorY++
         }
+    }
+
+    // wraps overflowed chars to next row
+    private fun wrapCell(cell: Cell) {
+        // scroll if at bottom of screen
+        if (cursorY >= height - 1) {
+            scroll()
+        }
+
+        // shift the next line
+        val nextY = (cursorY + 1).coerceAtMost(height - 1)
+        for (x in (width - 1) downTo 1) {
+            screen[nextY][x] = screen[nextY][x - 1]
+        }
+        screen[nextY][0] = cell
     }
 }
