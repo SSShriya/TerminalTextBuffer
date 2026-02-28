@@ -36,39 +36,73 @@ class TerminalBufferContentTest {
         assertEquals(true, cellH.isBold)
     }
 
-    @Disabled("Not implemented yet")
-    @Test
-    fun `get character and attributes from scrollback`() {
-        // TODO
-    }
-
-    @Disabled("Not implemented yet")
     @Test
     fun `get line as string from screen`() {
         buffer.writeText("Hello")
         val line = buffer.getLine(0)
-        assertEquals("Hello     ", line)
+        assertEquals("Hello", line.trimEnd())
     }
 
-    @Disabled("Not implemented yet")
-    @Test
-    fun `get line as string from scrollback`() {
-        // TODO
-    }
 
-    @Disabled("Not implemented yet")
     @Test
     fun `get entire screen content as string`() {
-        buffer.writeText("A")
-        buffer.setCursorPosition(0, 1)
+        buffer.writeText("A\n")
         buffer.writeText("B")
         val expected = "A         \nB         "
         assertEquals(expected, buffer.getScreenContent())
     }
 
-    @Disabled("Not implemented yet")
+    @Test
+    fun `scrolling moves lines to scrollback`() {
+        buffer.writeText("Line 1\n")
+        buffer.writeText("Line 2\n")
+
+        // this is larger than the height so it will move one thing into scrollback
+        buffer.writeText("!")
+
+        assertEquals("Line 1", buffer.getScrollbackLine(0).trimEnd())
+        assertEquals("Line 2", buffer.getLine(0).trimEnd())
+        assertEquals("!", buffer.getLine(1).trimEnd())
+    }
+
+    @Test
+    fun `get character and attributes from scrollback`() {
+        buffer.setForeground(TerminalColour.RED)
+        buffer.setBold()
+        buffer.writeText("Old")
+
+        // Height is 2, so 2 newlines will push "Old" into scrollback
+        buffer.writeText("\n\n")
+
+        val cell = buffer.scrollbackCellAtPos(0, 0)
+        assertEquals('O', cell.char)
+        assertEquals(TerminalColour.RED, cell.fgCol)
+        assertEquals(true, cell.isBold)
+    }
+
+    @Test
+    fun `get line as string from scrollback`() {
+        buffer.writeText("History\n")
+        buffer.writeText("Screen1\n")
+        buffer.writeText("Screen2")
+
+        // "History" should have been pushed out of the screen
+        val line = buffer.getScrollbackLine(0)
+        assertEquals("History", line.trimEnd())
+    }
+
     @Test
     fun `get entire screen and scrollback content as string`() {
-        // TODO
+        buffer.writeText("History\n")
+        buffer.writeText("Line 0\n")
+        buffer.writeText("Line 1")
+
+        val content = buffer.getScreenScrollbackContent()
+
+        val lines = content.lines().map { it.trimEnd() }
+
+        assertEquals("History", lines[0])
+        assertEquals("Line 0", lines[1])
+        assertEquals("Line 1", lines[2])
     }
 }

@@ -23,14 +23,14 @@ class TerminalBufferSetupTest {
         val topLeft = buffer.cellAtPos(0, 0)
         val bottomRight = buffer.cellAtPos(19, 9)
 
-        assertEquals(null, topLeft.char)
+        assertEquals(' ', topLeft.char)
         assertFalse(topLeft.isBold)
         assertFalse(topLeft.isItalic)
         assertFalse(topLeft.isUnderline)
         assertEquals(TerminalColour.DEFAULT, topLeft.fgCol)
         assertEquals(TerminalColour.DEFAULT, topLeft.bgCol)
 
-        assertEquals(null, bottomRight.char)
+        assertEquals(' ', bottomRight.char)
         assertFalse(bottomRight.isBold)
         assertFalse(bottomRight.isItalic)
         assertFalse(bottomRight.isUnderline)
