@@ -12,7 +12,7 @@ data class Cell(
     val char: Char? = null,
     val fgCol: TerminalColour = TerminalColour.DEFAULT,
     val bgCol: TerminalColour = TerminalColour.DEFAULT,
-    val bold: Boolean = false,
-    val italic: Boolean = false,
-    val underline: Boolean = false,
+    val isBold: Boolean = false,
+    val isItalic: Boolean = false,
+    val isUnderline: Boolean = false,
 )
