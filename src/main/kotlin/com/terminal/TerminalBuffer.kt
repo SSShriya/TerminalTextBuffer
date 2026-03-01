@@ -19,12 +19,15 @@ class TerminalBuffer(
     }
 
     /* ATTRIBUTES */
-    // The screen is a list of cell arrays. Each array is a row of cells
-    private var screen = MutableList(height) { Array(width) { Cell() } }
+    // The screen is a 2d array of cells.
+    private var screen = Array(height) { Array(width) { Cell() } }
 
     // The scrollback is the lines that have been scrolled away - a double ended queue
     // is used to allow efficient accesses to both the top and bottom of the scrollback
     private var scrollback = ArrayDeque<Array<Cell>>()
+
+    // Pointer to the top row
+    private var topIndex = 0
 
     // Current buffer attributes - foreground, background and styles
     private var fgCol = TerminalColour.DEFAULT
@@ -36,6 +39,9 @@ class TerminalBuffer(
     // Cursor information
     private var cursorX = 0
     private var cursorY = 0
+
+    // Returns the actual position of a row in the array, given a row number
+    private fun physicalY(y: Int) = (topIndex + y) % height
 
     /* ATTRIBUTE OPERATIONS */
     fun setForeground(fg: TerminalColour) {
@@ -84,8 +90,7 @@ class TerminalBuffer(
             if (char == '\n') {
                 writeNewLine()
             } else {
-                val cell = createCell(char)
-                screen[cursorY][cursorX] = cell
+                screen[physicalY(cursorY)][cursorX] = createCell(char)
                 advanceCursor()
             }
         }
@@ -93,44 +98,54 @@ class TerminalBuffer(
 
     fun insertText(text: String) {
         text.forEach { char ->
-            val curX = cursorX
-            val curY = cursorY
-            // save the last char in row
-            val lastCell = screen[curY][width - 1]
+            var curX = cursorX
+            var curY = cursorY
+            var cellToInsert = createCell(char)
 
-            // move all chars to right
-            for (x in (width - 1) downTo (curX + 1)) {
-                screen[curY][x] = screen[curY][x -1]
+            // need to shift all rows
+            while (curY < height) {
+                val pY = physicalY(curY)
+                val row = screen[pY]
+                val overflowCell = row[width - 1]
+
+                // Shift row right
+                System.arraycopy(row, curX, row, curX + 1, width - 1 - curX)
+                row[curX] = cellToInsert
+
+                // if the very last cell is empty, don't need to do anything
+                if (overflowCell.char == ' ' || overflowCell.char == nullChar) {
+                    break
+                }
+
+                // wrap to the start of the next line
+                cellToInsert = overflowCell
+                curX = 0
+                curY++
+                if (curY >= height) {
+                    scroll()
+                    curY = height - 1
+                }
             }
-
-            // add new char into current pos
-            screen[curY][curX] = createCell(char)
-
-            // wrap last char
-            wrapCell(lastCell, curY + 1)
-
             advanceCursor()
         }
     }
 
     fun fillLine(char: Char) {
+        val pY = physicalY(cursorY)
         for (x in 0..<width) {
-            screen[cursorY][x] = createCell(char)
+            screen[pY][x] = createCell(char)
         }
     }
 
-    fun insertEmptyLine() {
-        screen.removeLast()
-        val newline = Array(width) { createCell(nullChar) }
-
-        screen.add(cursorY, newline)
-    }
+    fun insertEmptyLine() =
+        scroll()
 
     // reset all cells to the current state of the buffer
     fun clearScreen() {
         for (y in 0..<height) {
+            val pY = physicalY(y)
             for (x in 0..<width) {
-                screen[y][x] = createCell(nullChar)
+                screen[pY][x] = createCell(nullChar)
             }
         }
         cursorX = 0
@@ -146,16 +161,22 @@ class TerminalBuffer(
     fun cellAtPos(
         x: Int,
         y: Int,
-    ) = screen[y][x]
+    ) : Cell {
+        val pY = physicalY(y.coerceIn(0, height - 1))
+        val pX = x.coerceIn(0, width - 1)
+        return screen[pY][pX]
+    }
 
     fun scrollbackCellAtPos(
         x: Int,
         y: Int,
-    ) = scrollback[y][x]
+    ): Cell {
+        return scrollback[y][x]
+    }
 
     fun getLine(line: Int): String =
         if (line !in 0..<height) ""
-        else screen[line].map { if (it.char == nullChar) ' ' else it.char }.joinToString("")
+        else screen[physicalY(line)].map { if (it.char == nullChar) ' ' else it.char }.joinToString("")
 
     fun getScrollbackLine(line: Int): String =
         if (line !in 0..<scrollback.size) ""
@@ -190,16 +211,22 @@ class TerminalBuffer(
 
     // Move top line from screen into scrollback
     private fun scroll() {
-        val removedLine = screen.removeFirst()
-        scrollback.addLast(removedLine)
+        val oldTopIndex = topIndex
+        val rowToScroll = screen[oldTopIndex]
+        scrollback.addLast(rowToScroll.copyOf())
 
         // remove the first thing in scroll history if size is too big
         if (scrollback.size > maxScrollback) {
             scrollback.removeFirst()
         }
 
-        // add new line of empty cells to screen
-        screen.add(Array(width) { createCell(nullChar) })
+        // replace the row with an empty row so it can be reused
+        for (x in 0..<width) {
+            screen[oldTopIndex][x] = createCell(nullChar)
+        }
+
+        // increment the top of the circular queue
+        topIndex = (topIndex + 1) % height
     }
 
     private fun writeNewLine() {
@@ -209,25 +236,5 @@ class TerminalBuffer(
         } else {
             cursorY++
         }
-    }
-
-    // wraps overflowed chars to next row
-    private fun wrapCell(cell: Cell, row: Int) {
-        if (cell.char == nullChar || cell.char == ' ') return
-
-        var targetRow = row
-        // scroll if at bottom of screen
-        if (targetRow >= height) {
-            scroll()
-            targetRow = height - 1
-        }
-
-        val lastCell = screen[targetRow][width - 1]
-        for (x in (width - 1) downTo 1) {
-            screen[targetRow][x] = screen[targetRow][x - 1]
-        }
-        screen[targetRow][0] = cell
-
-        wrapCell(lastCell, targetRow + 1)
     }
 }
