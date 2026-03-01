@@ -84,6 +84,9 @@ class TerminalBuffer(
             if (char == '\n') {
                 writeNewLine()
             } else {
+                if (cursorX >= width) {
+                    writeNewLine()
+                }
                 screen[physicalY(cursorY)][cursorX] = createCell(char)
                 advanceCursor()
             }
@@ -117,7 +120,6 @@ class TerminalBuffer(
                 curY++
                 if (curY >= height) {
                     scroll()
-                    curY = height - 1
                 }
             }
             advanceCursor()
@@ -168,16 +170,43 @@ class TerminalBuffer(
         return scrollback[y][x]
     }
 
-    fun getLine(line: Int): String =
-        if (line !in 0..<height) ""
-        else screen[physicalY(line)].map { if (it.char == nullChar) ' ' else it.char }.joinToString("")
+    fun getLine(line: Int): String {
+        if (line !in 0..<height) return ""
+        val sb = StringBuilder(width)
+        val pY = physicalY(line)
+        val row = screen[pY]
+        for (cell in row) {
+            sb.append(if (cell.char == nullChar) ' ' else cell.char)
+        }
+        return sb.toString()
+    }
 
-    fun getScrollbackLine(line: Int): String =
-        if (line !in 0..<scrollback.size) ""
-        else scrollback[line].map { if (it.char == nullChar) ' ' else it.char }.joinToString("")
+    fun getScrollbackLine(line: Int): String {
+        if (line !in 0..<scrollback.size) return ""
+        val row = scrollback[line]
+        val sb = StringBuilder(width)
+        for (cell in row) {
+            sb.append(if (cell.char == nullChar || cell.char == '\u0000') ' ' else cell.char)
+        }
+        return sb.toString()
+    }
 
-    fun getScreenContent(): String =
-        (0..<height).joinToString("\n") { getLine(it) }
+    fun getScreenContent(): String {
+        val sb = StringBuilder(height * (width - 1))
+
+        for (y in 0..<height) {
+            val row = screen[physicalY(y)]
+            for (x in 0..<width) {
+                val cell = row[x]
+                sb.append(if (cell.char == nullChar) ' ' else cell.char)
+            }
+
+            if (y < height - 1) {
+                sb.append('\n')
+            }
+        }
+        return sb.toString()
+    }
 
     fun getScreenScrollbackContent(): String {
         val sb = StringBuilder()
@@ -194,12 +223,10 @@ class TerminalBuffer(
     /* HELPER FUNCTIONS */
     private fun createCell(char: Char): Cell = Cell(char, fgCol, bgCol, isBold, isItalic, isUnderline)
 
-    // Move cursor one place
+    // Move cursor one place forward as long as it is smaller than the width
     private fun advanceCursor() {
-        cursorX++
-        // If we have reached end of line then go to next one
-        if (cursorX >= width) {
-            writeNewLine()
+        if (cursorX < width) {
+            cursorX++
         }
     }
 
@@ -223,6 +250,7 @@ class TerminalBuffer(
         topIndex = (topIndex + 1) % height
     }
 
+    // If a newline is written, then move to the next line/scroll
     private fun writeNewLine() {
         cursorX = 0
         if (cursorY >= height - 1) {

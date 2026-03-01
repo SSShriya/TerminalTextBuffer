@@ -4,6 +4,7 @@ import com.terminal.TerminalBuffer
 import com.terminal.TerminalColour
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -130,32 +131,27 @@ class TerminalBufferContentTest {
 
     @Test
     fun `insertText triggers recursive wrapping across multiple lines`() {
-        // Fill two lines: row 0: "AAAAAAAAAA",row 1: "BBBBBBBBB"
-        buffer.writeText("AAAAAAAAAABBBBBBBBB")
+        // Fill almost 2 lines
+        buffer.writeText("AAAAAAAAAA")
+        buffer.writeText("BBBBBBBBB")
 
         // Move to the beginning and insert a '!'
         buffer.setCursorPosition(0, 0)
         buffer.insertText("!")
 
-        // Expected Row 0: "!AAAAAAAAA"
         assertEquals("!AAAAAAAAA", buffer.getLine(0))
 
-        // Expected Row 1: "ABBBBBBBBB" because of wrapping
         assertEquals("ABBBBBBBBB", buffer.getLine(1))
     }
 
-    @Disabled("Not implemented")
     @Test
     fun `filling the last cell of the last row does not trigger a scroll`() {
-        // Fill the first row
         buffer.writeText("ABCDEFJHIJ")
-        // Fill the first 9 cells of the second row
         buffer.writeText("KLMNOPQRS")
 
         // Write the last char on the grid
         buffer.writeText("T")
 
-        // The screen should still contain "AB" and "CD"
         assertEquals("ABCDEFJHIJ", buffer.getLine(0))
         assertEquals("KLMNOPQRST", buffer.getLine(1))
 
@@ -173,9 +169,131 @@ class TerminalBufferContentTest {
         buffer.setCursorPosition(0, 0)
         buffer.insertText("!")
 
-        // 1. The "J" should have been pushed off the bottom, triggering a scroll.
-        // 2. Therefore, the old Row 0 ("1234567890") is now in scrollback.
-        assertEquals("1234567890", buffer.getScrollbackLine(0).trimEnd())
-        assertEquals("!ABCDEFGHI", buffer.getLine(0).trimEnd())
+        assertEquals("!123456789", buffer.getScrollbackLine(0).trimEnd())
+        assertEquals("0ABCDEFGHI", buffer.getLine(0).trimEnd())
+    }
+
+    @Test
+    fun `inserting into the last possible slot sets up the lazy wrap`() {
+        buffer.writeText("A".repeat(width * height - 1))
+
+        buffer.setCursorPosition(width - 1, height - 1)
+        buffer.insertText("Z")
+
+        assertEquals(width, buffer.cursorPosition.first)
+        assertEquals("", buffer.getScrollbackLine(0))
+
+        buffer.writeText("Next")
+        assertEquals("A".repeat(width), buffer.getScrollbackLine(0))
+    }
+
+    @Test
+    fun `modifying the screen does not change historical lines in scrollback`() {
+        buffer.writeText("Original\n")
+        buffer.writeText("Screen Line\n")
+        buffer.writeText("Trigger Scroll")
+
+        buffer.clearScreen()
+
+        val scrollbackLine = buffer.getScrollbackLine(0).trim()
+        assertEquals("Original", scrollbackLine)
+    }
+
+    @Test
+    fun `insertEmptyLine pushes top line to scrollback and clears bottom`() {
+        buffer.writeText("Top Line\n")
+        buffer.writeText("BottomLine")
+
+        buffer.insertEmptyLine()
+
+        // "Top Line" should be in scrollback now
+        assertEquals("Top Line", buffer.getScrollbackLine(0).trimEnd())
+
+        assertEquals("BottomLine", buffer.getLine(0).trimEnd())
+
+        // The new bottom line should be empty
+        assertEquals("", buffer.getLine(1).trim())
+    }
+
+    @Test
+    fun `insertEmptyLine works repeatedly across circular buffer boundaries`() {
+        // Fill every line
+        for (i in 0..<height) {
+            buffer.writeText("Line $i\n")
+        }
+
+        // Insert more empty lines than the height of the screen
+        repeat(height + 1) {
+            buffer.insertEmptyLine()
+        }
+
+        // The screen should be entirely empty now
+        for (i in 0..<height) {
+            assertEquals("", buffer.getLine(i).trim())
+        }
+
+        // The very first line we wrote should be at the start of scrollback
+        assertEquals("Line 0", buffer.getScrollbackLine(0).trimEnd())
+    }
+
+    @Test
+    fun `clearScreenAndScrollback completely empties all buffers and resets cursor`() {
+        buffer.writeText("Line 1\n")
+        buffer.writeText("Line 2\n")
+        buffer.writeText("Line 3")
+
+        // Move cursor away from 0,0
+        buffer.setCursorPosition(5, 1)
+
+        buffer.clearScreenAndScrollback()
+
+        // Scrollback should be empty
+        assertEquals("", buffer.getScrollbackLine(0))
+
+        // Screen should be empty
+        for (i in 0..<height) {
+            assertEquals("", buffer.getLine(i).trim())
+        }
+
+        // Cursor should be back at the start
+        assertEquals(0 to 0, buffer.cursorPosition)
+    }
+
+    @Test
+    fun `getLine and getScrollbackLine return empty string for invalid indices`() {
+        buffer.writeText("Line 0\nLine 1")
+
+        assertEquals("", buffer.getLine(-1))
+        assertEquals("", buffer.getLine(2))
+        assertEquals("", buffer.getLine(99))
+
+        // Initially empty
+        assertEquals("", buffer.getScrollbackLine(0))
+
+        buffer.writeText("\nScroll")
+
+        // Now index 0 in scrollback is valid, but 1 is not
+        assertEquals("Line 0", buffer.getScrollbackLine(0).trim())
+        assertEquals("", buffer.getScrollbackLine(1))
+        assertEquals("", buffer.getScrollbackLine(-1))
+    }
+
+    @Test
+    fun `scrollback maintains fixed size and evicts oldest lines first`() {
+        val smallBuffer = TerminalBuffer(width = 10, height = 1, maxScrollback = 2)
+
+        // Fill the scrollback to the limit
+        smallBuffer.writeText("Line 1\n") // Goes to scrollback[0]
+        smallBuffer.writeText("Line 2\n") // Goes to scrollback[1]
+
+        assertEquals("Line 1", smallBuffer.getScrollbackLine(0).trim())
+        assertEquals("Line 2", smallBuffer.getScrollbackLine(1).trim())
+
+        // Trigger one more scroll - Line 1 should no longer be in scrollback
+        smallBuffer.writeText("Line 3\n")
+
+        assertEquals("Line 2", smallBuffer.getScrollbackLine(0).trim())
+        assertEquals("Line 3", smallBuffer.getScrollbackLine(1).trim())
+        assertEquals("", smallBuffer.getScrollbackLine(2))
     }
 }
