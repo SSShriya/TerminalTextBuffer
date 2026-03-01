@@ -23,10 +23,7 @@ class TerminalBufferContentTest {
 
     @Test
     fun `get character and attributes from screen`() {
-        buffer.setForeground(TerminalColour.RED)
-        buffer.setBackground(TerminalColour.GREEN)
-
-        buffer.setBold()
+        buffer.setAttributes(fg = TerminalColour.RED, bg = TerminalColour.GREEN, bold = true)
         buffer.writeText("Hi")
 
         val cellI = buffer.cellAtPos(1, 0)
@@ -70,9 +67,7 @@ class TerminalBufferContentTest {
 
     @Test
     fun `get character and attributes from scrollback`() {
-        buffer.setForeground(TerminalColour.RED)
-        buffer.setItalic()
-        buffer.setUnderline()
+        buffer.setAttributes(fg = TerminalColour.RED, italic = true, underline = true)
         buffer.writeText("Old")
 
         // Height is 2, so 2 newlines will push "Old" into scrollback

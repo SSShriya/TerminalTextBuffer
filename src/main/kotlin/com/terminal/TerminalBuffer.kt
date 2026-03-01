@@ -44,24 +44,18 @@ class TerminalBuffer(
     private fun physicalY(y: Int) = (topIndex + y) % height
 
     /* ATTRIBUTE OPERATIONS */
-    fun setForeground(fg: TerminalColour) {
+    fun setAttributes(
+        fg: TerminalColour = fgCol,
+        bg: TerminalColour = bgCol,
+        bold: Boolean = isBold,
+        italic: Boolean = isItalic,
+        underline: Boolean = isUnderline,
+    ) {
         fgCol = fg
-    }
-
-    fun setBackground(bg: TerminalColour) {
         bgCol = bg
-    }
-
-    fun setBold() {
-        isBold = true
-    }
-
-    fun setItalic() {
-        isItalic = true
-    }
-
-    fun setUnderline() {
-        isUnderline = true
+        isBold = bold
+        isItalic = italic
+        isUnderline = underline
     }
 
     /* CURSOR OPERATIONS  */
